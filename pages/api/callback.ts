@@ -17,28 +17,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // If multiple 'code' query parameters are provided, just use the first.
   const auth = Array.isArray(code) ? code[0] : code
 
-  let reqBody = JSON.stringify({
+  let discordReqBody = JSON.stringify({
     code: auth,
     redirect_uri: DISCORD_REDIRECT_URI
   })
 
-  // Use AbandonAuth API to login with Discord OAuth
-  let response = await fetch(
+  // Use AbandonAuth API to receive exchange token from Discord OAuth
+  let abandonAuthDiscordResp = await fetch(
     `${ABANDONAUTH_URL}/discord`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: reqBody
+      body: discordReqBody
     },
   )
 
-  if (response.ok) {
-    const { token } = await response.json()
+  if (abandonAuthDiscordResp.ok) {
+    const exchangeToken  = (await abandonAuthDiscordResp.json()).token
 
-    if (token) {
-      res.setHeader('Set-Cookie', serialize('Authorization', token, { path: '/' }))
-      return res.redirect('/dashboard')
+    // Use AbandonAuth API to retrieve AbandonAuth user access token from exchange token
+    let abandonAuthUserLoginResp = await fetch(
+      `${ABANDONAUTH_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Bearer ${exchangeToken}`
+        },
+      },
+    )
+
+    if (abandonAuthUserLoginResp.ok) {
+      const { token } = await abandonAuthUserLoginResp.json()
+
+      if (token) {
+        res.setHeader('Set-Cookie', serialize('Authorization', token, { path: '/' }))
+        return res.redirect('/dashboard')
+      }
     }
   }
 

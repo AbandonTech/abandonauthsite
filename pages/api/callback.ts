@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { serialize } from "cookie"
 import process from 'process'
 
-const ABANDONAUTH_URL: string = process.env.ABANDONAUTH_API_URL!
+const ABANDONAUTH_URL: string = process.env.NEXT_PUBLIC_ABANDONAUTH_API_URL!
 const DISCORD_REDIRECT_URI = process.env.NEXT_PUBLIC_DISCORD_REDIRECT_URI
 
 
